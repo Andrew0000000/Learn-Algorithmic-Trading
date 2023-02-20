@@ -2,7 +2,7 @@ import pandas as pd
 import yfinance as yf
 from pandas_datareader import data
 
-start_date = '2022-06-01'
+start_date = '2016-01-01'
 end_date = '2023-02-19'
 index = "GOOGL"
 stocks_data = yf.download('GOOGL', start=start_date, end=end_date)
