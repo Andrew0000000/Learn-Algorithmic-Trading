@@ -1,20 +1,14 @@
 import pandas as pd
-
+import yfinance as yf
 from pandas_datareader import data
 
-start_date = '2014-01-01'
-end_date = '2018-01-01'
-SRC_DATA_FILENAME = 'goog_data.pkl'
+start_date = '2022-06-01'
+end_date = '2023-02-19'
+index = "GOOGL"
+stocks_data = yf.download('GOOGL', start=start_date, end=end_date)
 
-try:
-  goog_data2 = pd.read_pickle(SRC_DATA_FILENAME)
-except FileNotFoundError:
-  goog_data2 = data.DataReader('GOOG', 'yahoo', start_date, end_date)
-  goog_data2.to_pickle(SRC_DATA_FILENAME)
+print(stocks_data)
 
-goog_data = goog_data2.tail(620)
-
-close = goog_data['Close']
 
 '''
 The Bollinger Band (BBANDS) study created
@@ -59,6 +53,9 @@ Middle Band = MA
 Lower Band = MA - delta
 
  '''
+
+
+
 import statistics as stats
 import math as math
 
@@ -69,7 +66,7 @@ sma_values = [] # moving average of prices for visualization purposes
 upper_band = [] # upper band values
 lower_band = [] # lower band values
 
-for close_price in close:
+for close_price in stocks_data.Close:
   history.append(close_price)
   if len(history) > time_period: # we only want to maintain at most 'time_period' number of price observations
     del (history[0])
@@ -85,21 +82,21 @@ for close_price in close:
   upper_band.append(sma + stdev_factor * stdev)
   lower_band.append(sma - stdev_factor * stdev)
 
-goog_data = goog_data.assign(ClosePrice=pd.Series(close, index=goog_data.index))
-goog_data = goog_data.assign(MiddleBollingerBand20DaySMA=pd.Series(sma_values, index=goog_data.index))
-goog_data = goog_data.assign(UpperBollingerBand20DaySMA2StdevFactor=pd.Series(upper_band, index=goog_data.index))
-goog_data = goog_data.assign(LowerBollingerBand20DaySMA2StdevFactor=pd.Series(lower_band, index=goog_data.index))
+stocks_data = stocks_data.assign(ClosePrice=pd.Series(stocks_data.Close, index=stocks_data.index))
+stocks_data = stocks_data.assign(MiddleBollingerBand20DaySMA=pd.Series(sma_values, index=stocks_data.index))
+stocks_data = stocks_data.assign(UpperBollingerBand20DaySMA2StdevFactor=pd.Series(upper_band, index=stocks_data.index))
+stocks_data = stocks_data.assign(LowerBollingerBand20DaySMA2StdevFactor=pd.Series(lower_band, index=stocks_data.index))
 
-close_price = goog_data['ClosePrice']
-mband = goog_data['MiddleBollingerBand20DaySMA']
-uband = goog_data['UpperBollingerBand20DaySMA2StdevFactor']
-lband = goog_data['LowerBollingerBand20DaySMA2StdevFactor']
+close_price = stocks_data['ClosePrice']
+mband = stocks_data['MiddleBollingerBand20DaySMA']
+uband = stocks_data['UpperBollingerBand20DaySMA2StdevFactor']
+lband = stocks_data['LowerBollingerBand20DaySMA2StdevFactor']
 
 import matplotlib.pyplot as plt
 
 fig = plt.figure()
-ax1 = fig.add_subplot(111, ylabel='Google price in $')
-close_price.plot(ax=ax1, color='g', lw=2., legend=True)
+ax1 = fig.add_subplot(111, ylabel=index + ' price in $')
+close_price.plot(ax=ax1, color='black', lw=2., legend=True)
 mband.plot(ax=ax1, color='b', lw=2., legend=True)
 uband.plot(ax=ax1, color='g', lw=2., legend=True)
 lband.plot(ax=ax1, color='r', lw=2., legend=True)
