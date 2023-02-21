@@ -2,12 +2,11 @@ import pandas as pd
 import yfinance as yf
 from pandas_datareader import data
 
-start_date = '2016-01-01'
+start_date = '2019-01-01'
 end_date = '2023-02-19'
-index = "GOOGL"
-stocks_data = yf.download('GOOGL', start=start_date, end=end_date)
-
-print(stocks_data)
+# get index of tesla stock
+stock = "TSLA"
+stocks_data = yf.download(stock , start=start_date, end=end_date)
 
 
 '''
@@ -83,21 +82,57 @@ for close_price in stocks_data.Close:
   lower_band.append(sma - stdev_factor * stdev)
 
 stocks_data = stocks_data.assign(ClosePrice=pd.Series(stocks_data.Close, index=stocks_data.index))
-stocks_data = stocks_data.assign(MiddleBollingerBand20DaySMA=pd.Series(sma_values, index=stocks_data.index))
-stocks_data = stocks_data.assign(UpperBollingerBand20DaySMA2StdevFactor=pd.Series(upper_band, index=stocks_data.index))
-stocks_data = stocks_data.assign(LowerBollingerBand20DaySMA2StdevFactor=pd.Series(lower_band, index=stocks_data.index))
+stocks_data = stocks_data.assign(SMA=pd.Series(sma_values, index=stocks_data.index))
+stocks_data = stocks_data.assign(UpperBand=pd.Series(upper_band, index=stocks_data.index))
+stocks_data = stocks_data.assign(LowerBand=pd.Series(lower_band, index=stocks_data.index))
+print(stocks_data)
 
 close_price = stocks_data['ClosePrice']
-mband = stocks_data['MiddleBollingerBand20DaySMA']
-uband = stocks_data['UpperBollingerBand20DaySMA2StdevFactor']
-lband = stocks_data['LowerBollingerBand20DaySMA2StdevFactor']
+SMA = stocks_data['SMA']
+uband = stocks_data['UpperBand']
+lband = stocks_data['LowerBand']
 
 import matplotlib.pyplot as plt
-
 fig = plt.figure()
-ax1 = fig.add_subplot(111, ylabel=index + ' price in $')
+ax1 = fig.add_subplot(111, ylabel=stock + ' price in $')
 close_price.plot(ax=ax1, color='black', lw=2., legend=True)
-mband.plot(ax=ax1, color='b', lw=2., legend=True)
+SMA.plot(ax=ax1, color='b', lw=2., legend=True)
 uband.plot(ax=ax1, color='g', lw=2., legend=True)
 lband.plot(ax=ax1, color='r', lw=2., legend=True)
+stocks_data_signal = pd.DataFrame(index=stocks_data.index)
+stocks_data_signal['Price'] = stocks_data['Adj Close']
+stocks_data_signal['UpperBand'] = stocks_data['UpperBand']
+stocks_data_signal['LowerBand'] = stocks_data['LowerBand']
+stocks_data_signal['SellSignal'] = stocks_data_signal['Price'] - stocks_data['UpperBand']
+stocks_data_signal['BuySignal'] = stocks_data_signal['Price'] - stocks_data['LowerBand']
+stocks_data_signal['Position'] = 0
+
+# records the prices of the stocks bought and sold with the buy signal and sell signal respectively
+bought = []
+sold = []
+
+# position means the number of stocks you own at a given time. BuySignal increments position by 1 and SellSignal decrements position by 1.
+for i in range(20, len(stocks_data_signal)):
+  if stocks_data_signal['SellSignal'][i] > 10 and stocks_data_signal['Position'][i - 1] == 1:
+    stocks_data_signal['Position'][i] = 0
+    sold.append(stocks_data_signal['Price'][i])
+  elif stocks_data_signal['BuySignal'][i] < -10 and stocks_data_signal['Position'][i - 1] == 0:
+    stocks_data_signal['Position'][i] = 1
+    bought.append(stocks_data_signal['Price'][i])
+  else:
+    stocks_data_signal['Position'][i] = stocks_data_signal['Position'][i - 1]
+
+# calculates the profit/loss of the strategy
+profit = sum(sold) - sum(bought)
+print(sum(bought))
+print(sum(sold))
+print("bought: ", bought)
+print("sold: ", sold)
+print(len(bought), len(sold))
+print("Profit: ", profit)
+
+
+
+
+print(stocks_data_signal)
 plt.show()
