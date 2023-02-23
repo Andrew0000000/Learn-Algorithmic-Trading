@@ -2,10 +2,10 @@ import pandas as pd
 import yfinance as yf
 from pandas_datareader import data
 
-start_date = '2019-01-01'
-end_date = '2023-02-19'
+start_date = '2017-01-01'
+end_date = '2022-12-31'
 # get index of tesla stock
-stock = "TSLA"
+stock = "GOOGL"
 stocks_data = yf.download(stock , start=start_date, end=end_date)
 
 
@@ -113,26 +113,23 @@ sold = []
 
 # position means the number of stocks you own at a given time. BuySignal increments position by 1 and SellSignal decrements position by 1.
 for i in range(20, len(stocks_data_signal)):
-  if stocks_data_signal['SellSignal'][i] > 10 and stocks_data_signal['Position'][i - 1] == 1:
+  if stocks_data_signal['SellSignal'][i] > 0 and stocks_data_signal['Position'][i - 1] == 1 and stocks_data_signal['Price'][i] > bought[-1]:
     stocks_data_signal['Position'][i] = 0
     sold.append(stocks_data_signal['Price'][i])
-  elif stocks_data_signal['BuySignal'][i] < -10 and stocks_data_signal['Position'][i - 1] == 0:
+  elif stocks_data_signal['BuySignal'][i] < 0 and stocks_data_signal['Position'][i - 1] == 0:
     stocks_data_signal['Position'][i] = 1
     bought.append(stocks_data_signal['Price'][i])
   else:
     stocks_data_signal['Position'][i] = stocks_data_signal['Position'][i - 1]
 
 # calculates the profit/loss of the strategy
-profit = sum(sold) - sum(bought)
-print(sum(bought))
-print(sum(sold))
+profit = 0
+for i in range(len(sold)):
+  profit += sold[i] - bought[i]
 print("bought: ", bought)
 print("sold: ", sold)
-print(len(bought), len(sold))
+print(len(bought), len(sold), "sum", sum(bought), sum(sold))
 print("Profit: ", profit)
-
-
-
 
 print(stocks_data_signal)
 plt.show()
